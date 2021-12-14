@@ -4,12 +4,11 @@ export default class StoredProcedure {
   constructor(procName, timeOut) {
     this.procName = procName;
     this.timeOut = timeOut;
-
     this.params = [];
   }
 
-  addParameter(name, type, value) {
-    const parsed = this.getVariableType(type);
+  addParam(name, type, value, options) {
+    const parsed = StoredProcedure.getDataType(type, options);
     this.params.push({
       direction: 'input',
       name,
@@ -19,8 +18,8 @@ export default class StoredProcedure {
     });
   }
 
-  addOutputParameter(name, type, value) {
-    const parsed = this.getVariableType(type);
+  addOutputParam(name, type, value, options) {
+    const parsed = StoredProcedure.getDataType(type, options);
     this.params.push({
       direction: 'output',
       name,
@@ -30,14 +29,15 @@ export default class StoredProcedure {
     });
   }
 
-  static getVariableType(str) {
-    const [nameStr, lengthStr] = str.replace(')', '').split('(');
+  static getDataType(typeStr, options) {
+    // eslint-disable-next-line no-unused-vars
+    const [nameStr, optionsStr] = typeStr.replace(')', '').split('(');
 
-    let length;
-    if (lengthStr) {
-      length = parseInt(lengthStr, 10);
-      if (Number.isNaN(length)) length = lengthStr.toLowerCase();
-    }
+    // let length;
+    // if (optionsStr) {
+    //   length = parseInt(optionsStr, 10);
+    //   if (Number.isNaN(length)) length = optionsStr.toLowerCase();
+    // }
 
     const name = dataTypes[nameStr.toLowerCase()];
     if (!name) {
@@ -45,9 +45,10 @@ export default class StoredProcedure {
     }
     /* https://tediousjs.github.io/tedious/api-datatypes.html */
 
-    if (length) {
-      return { type: name, options: { length } };
-    }
-    return { type: name };
+    // if (length) {
+    //   return { type: name, options: { length } };
+    // }
+    // return { type: name };
+    return { type: name, options };
   }
 }
