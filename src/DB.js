@@ -58,7 +58,7 @@ export default class DB {
           );
           reject(err);
         }
-        this.logger.info('resetConnection: Database connection successful.');
+        this.logger.info('resetConnection: Database connection successfully reset.');
         resolve(this.getState());
       });
       // this.connection.on('end', () => {
