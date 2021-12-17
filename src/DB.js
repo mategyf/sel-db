@@ -2,16 +2,42 @@
 import { Connection, Request } from 'tedious';
 
 export default class DB {
-  constructor(sqlConfig, logger) {
-    this.config = sqlConfig;
-    this.connection = new Connection(sqlConfig);
+  constructor(logger) {
+    this.config = {};
+    this.connection = {};
     if (logger) {
-      this.logger = logger;
+      this.logger.error = (msg) => logger.error(`sel-db: ${msg}`);
+      this.logger.info = (msg) => logger.info(`sel-db: ${msg}`);
     } else {
       this.replaceLogger();
     }
+  }
+
+  // static establishConnection(sqlConfig, logger) {
+  //   return new Promise((resolve, reject) => {
+  //     const config = DB.sanitizeSqlConfig(sqlConfig);
+  //     const connection = new Connection(config);
+  //     const db = new DB(connection, logger);
+  //     db.openConnection()
+  //       .then(() => {
+  //         resolve(db);
+  //       })
+  //       .catch((e) => {
+  //         reject(e);
+  //       });
+  //   });
+  // }
+
+  initiateConnection(sqlConfig) {
+    this.config = sqlConfig;
+    this.connection = new Connection(this.config);
     this.checkSqlConfig();
-    // this.opendbConnection();
+    return this.openConnection();
+  }
+
+  dropConnection() {
+    this.connection.close();
+    this.connection = {};
   }
 
   getState() {
@@ -20,143 +46,93 @@ export default class DB {
 
   resetConnection() {
     return new Promise((resolve, reject) => {
-      if (this.getState() !== 'Final') {
-        this.logger.info('Reset skipped, not in final state.');
-        resolve(this.getState());
-      }
+      this.logger.info('resetConnection: Resetting connection.');
+      // this.connection.close();
+      this.dropConnection();
 
-      this.connection.reset((e) => {
-        if (e) {
-          this.logger.error(`Database connection reset failed! ${e}`);
-          reject(e);
+      this.connection = new Connection(this.config);
+      this.connection.connect((err) => {
+        if (err) {
+          this.logger.error(
+            `resetConnection: Reopen connection failed: ${err}`,
+          );
+          reject(err);
         }
-        this.logger.info('Connection successfully reset.');
+        this.logger.info('resetConnection: Database connection successful.');
         resolve(this.getState());
       });
+      // this.connection.on('end', () => {
+      // this.openConnection()
+      //   .then((state) => {
+      //     this.logger.info('Connection successfully reset.');
+      //     resolve(state);
+      //   })
+      //   .catch((e) => {
+      //     this.logger.error(`Connection reset failed! ${e}`);
+      //     reject(e);
+      //   });
+      // });
+
+      // if (this.getState() !== 'Final') {
+      //   this.logger.info('Reset skipped, not in final state.');
+      //   resolve(this.getState());
+      // }
+
+      // this.connection.reset((e) => {
+      //   if (e) {
+      //     this.logger.error(`Database connection reset failed! ${e}`);
+      //     reject(e);
+      //   }
+      //   this.logger.info('Connection successfully reset.');
+      //   resolve(this.getState());
+      // });
     });
   }
-
-  // async resetDbConnection() {
-  //   if (this.connection?.state?.name !== 'Final') {
-  //     return;
-  //   }
-
-  //   this.connection.reset((err) => {
-  //     if (err) {
-  //       this.logger.error(`Database connection reset failed! ${err}`);
-  //       const error = new Error('Database connection reset failed!');
-  //       error.status = 500;
-  //       throw error;
-  //     }
-  //     this.logger.info('Database connection reset successful.');
-  //   });
-
-  // const promise = new Promise((res, rej) => {
-  //   this.connection.reset((err) => {
-  //     if (err) {
-  //       rej();
-  //     }
-  //     res();
-  //   });
-  // });
-
-  // await promise()
-  //   .then(() => {
-  //     res();
-  //   })
-  //   .catch(() => {
-  //     throw new Error("Connection failed");
-  //   });
-  // }
 
   openConnection() {
     return new Promise((resolve, reject) => {
       const state = this.getState();
       if (state === 'LoggedIn') {
-        this.logger.info('sel-db: Already logged in.');
+        this.logger.info('openConnection: Already logged in.');
         resolve(this.getState());
       }
 
       if (state === 'Connecting') {
-        this.logger.info('sel-db: Already connecting, waiting for completion.');
+        this.logger.info(
+          'openConnection: Already connecting, waiting for completion.',
+        );
         // resolve(this.getState());
         this.connection.on('connect', (err) => {
           if (err) {
-            this.logger.error(`sel-db: ${err}`);
+            this.logger.error(err);
             reject(err);
           }
           resolve(this.getState());
         });
       } else if (state === 'Final') {
-        this.logger.info('sel-db: State Final. Resetting connection.');
+        this.logger.info(
+          'openConnection: State is Final. Resetting connection.',
+        );
         this.resetConnection()
           .then(() => {
-            this.logger.info('sel-db: Connection reset.');
+            this.logger.info('openConnection: Connection successfully reset.');
             resolve(this.getState());
           })
           .catch((e) => {
-            this.logger.error(`sel-db: ${e}`);
+            this.logger.error(e);
             reject(e);
           });
       } else {
         this.connection.connect((err) => {
           if (err) {
-            this.logger.error(`sel-db: ${err}`);
+            this.logger.error(err);
             reject(err);
           }
-          this.logger.info('sel-db: Database connection successful.');
+          this.logger.info('openConnection: Database successfully connected.');
           resolve(this.getState());
         });
       }
     });
-  }
-
-  async opendbConnection() {
-    console.log(this.connection?.state?.name);
-    if (
-      this.connection?.state?.name === 'LoggedIn' ||
-      this.connection?.state?.name === 'Connecting'
-    ) {
-      return;
-    }
-
-    if (this.connection?.state?.name === 'Final') {
-      await this.resetDbConnection();
-      return;
-    }
-
-    this.connection.connect((err) => {
-      if (err) {
-        this.logger.error(err);
-        const error = new Error('Database connection failed!'); // send back err too?
-        error.status = 500;
-        throw error;
-      }
-      this.logger.info('Database connection successful.');
-    });
-
-    // const promise = new Promise((res, rej) => {
-    //   this.connection.connect((err) => {
-    //     if (err) {
-    //       logger.error(err);
-    //       rej();
-    //     }
-    //     logger.info("Database connected successfully");
-    //     res();
-    //   });
-    // });
-
-    // await promise
-    //   .then(() => {
-    //     return;
-    //   })
-    //   .catch((err) => {
-    //     const error = new Error("Database connection failed");
-    //     error.status = 500;
-    //     throw error;
-    //   });
-
-    // return;
   }
 
   retardedCall(sp) {
@@ -225,84 +201,9 @@ export default class DB {
     return this.openConnection()
       .then(() => this.retardedCall(sp))
       .catch((e) => {
-        this.logger.error(`sel-db: ${e}`);
+        this.logger.error(e);
         throw e;
       });
-  }
-
-  async callStoredProcedure(sp) {
-    await this.opendbConnection();
-
-    const promise = new Promise((res, rej) => {
-      const output = {};
-      let columns = [];
-      const recordset = [];
-
-      const request = new Request(sp.procName, (err) => {
-        if (err) {
-          rej(err);
-        }
-      });
-
-      // request.setTimeout = parseInt(process.env.DB_TIMEOUT);
-      request.setTimeout = sp.timeOut;
-
-      sp.params.forEach((param) => {
-        if (param.direction === 'input') {
-          request.addParameter(
-            param.name,
-            param.type,
-            param.value,
-            param.options,
-          );
-        } else {
-          request.addOutputParameter(
-            param.name,
-            param.type,
-            param.value,
-            param.options,
-          );
-        }
-      });
-
-      request.on('requestCompleted', () => {
-        res({ output, columns, recordset });
-      });
-
-      request.on('returnValue', (name, value) => {
-        output[name] = value;
-      });
-
-      request.on('columnMetadata', (columnsMetadata) => {
-        columns = columnsMetadata.map((colData) => ({
-          name: colData.colName,
-          type: colData.type.name,
-        }));
-      });
-
-      request.on('row', (xxxcolumns) => {
-        const record = {};
-
-        xxxcolumns.forEach((column) => {
-          record[column.metadata.colName] = column.value;
-        });
-
-        recordset.push(record);
-      });
-
-      this.connection.callProcedure(request);
-    });
-
-    const result = await promise
-      .then((output) => output)
-      .catch((err) => {
-        this.logger.error(err);
-        const error = new Error('Failed');
-        error.status = 500;
-        throw error;
-      });
-
-    return result;
   }
 
   replaceLogger() {
@@ -346,8 +247,47 @@ export default class DB {
       }
     } catch (e) {
       this.logger.error(e.message);
-      throw new Error(`sel-db config: ${e.message}`);
+      throw new Error(`checkSqlConfig: ${e.message}`);
     }
+  }
+
+  static sanitizeSqlConfig(config) {
+    const sanitizedConfig = config;
+    const validTypes = [
+      'default',
+      'ntlm',
+      'azure-active-directory-password',
+      'azure-active-directory-access-token',
+      'azure-active-directory-msi-vm',
+      'azure-active-directory-msi-app-service',
+    ];
+
+    try {
+      if (!config.server) {
+        throw new Error('No server configured!');
+      }
+      if (!config.authentication) {
+        throw new Error('No authentication provided!');
+      }
+      const { type } = config.authentication;
+      if (!type) {
+        sanitizedConfig.authentication.type = 'default';
+      } else if (!validTypes.includes(type)) {
+        throw new Error('Invalid authentication type!');
+      }
+      if (
+        !config.authentication.options ||
+        !config.authentication.options.userName ||
+        !config.authentication.options.password
+      ) {
+        throw new Error('No user or pass provided!');
+      }
+    } catch (e) {
+      // this.logger.error(e.message);
+      throw new Error(`DB.sanitizeSqlConfig: ${e.message}`);
+    }
+
+    return sanitizedConfig;
   }
 }
 
