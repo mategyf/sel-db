@@ -13,21 +13,6 @@ export default class DB {
     }
   }
 
-  // static establishConnection(sqlConfig, logger) {
-  //   return new Promise((resolve, reject) => {
-  //     const config = DB.sanitizeSqlConfig(sqlConfig);
-  //     const connection = new Connection(config);
-  //     const db = new DB(connection, logger);
-  //     db.openConnection()
-  //       .then(() => {
-  //         resolve(db);
-  //       })
-  //       .catch((e) => {
-  //         reject(e);
-  //       });
-  //   });
-  // }
-
   initiateConnection(sqlConfig) {
     this.config = sqlConfig;
     this.connection = new Connection(this.config);
@@ -47,7 +32,6 @@ export default class DB {
   resetConnection() {
     return new Promise((resolve, reject) => {
       this.logger.info('resetConnection: Resetting connection.');
-      // this.connection.close();
       this.dropConnection();
 
       this.connection = new Connection(this.config);
@@ -58,34 +42,11 @@ export default class DB {
           );
           reject(err);
         }
-        this.logger.info('resetConnection: Database connection successfully reset.');
+        this.logger.info(
+          'resetConnection: Database connection successfully reset.',
+        );
         resolve(this.getState());
       });
-      // this.connection.on('end', () => {
-      // this.openConnection()
-      //   .then((state) => {
-      //     this.logger.info('Connection successfully reset.');
-      //     resolve(state);
-      //   })
-      //   .catch((e) => {
-      //     this.logger.error(`Connection reset failed! ${e}`);
-      //     reject(e);
-      //   });
-      // });
-
-      // if (this.getState() !== 'Final') {
-      //   this.logger.info('Reset skipped, not in final state.');
-      //   resolve(this.getState());
-      // }
-
-      // this.connection.reset((e) => {
-      //   if (e) {
-      //     this.logger.error(`Database connection reset failed! ${e}`);
-      //     reject(e);
-      //   }
-      //   this.logger.info('Connection successfully reset.');
-      //   resolve(this.getState());
-      // });
     });
   }
 
@@ -101,7 +62,6 @@ export default class DB {
         this.logger.info(
           'openConnection: Already connecting, waiting for completion.',
         );
-        // resolve(this.getState());
         this.connection.on('connect', (err) => {
           if (err) {
             this.logger.error(err);
@@ -283,29 +243,10 @@ export default class DB {
         throw new Error('No user or pass provided!');
       }
     } catch (e) {
-      // this.logger.error(e.message);
+      this.logger.error(e.message);
       throw new Error(`DB.sanitizeSqlConfig: ${e.message}`);
     }
 
     return sanitizedConfig;
   }
 }
-
-/*
-  declare STATE: {
-    INITIALIZED: State;
-    CONNECTING: State;
-    SENT_PRELOGIN: State;
-    REROUTING: State;
-    TRANSIENT_FAILURE_RETRY: State;
-    SENT_TLSSSLNEGOTIATION: State;
-    SENT_LOGIN7_WITH_STANDARD_LOGIN: State;
-    SENT_LOGIN7_WITH_NTLM: State;
-    SENT_LOGIN7_WITH_FEDAUTH: State;
-    LOGGED_IN_SENDING_INITIAL_SQL: State;
-    LOGGED_IN: State;
-    SENT_CLIENT_REQUEST: State;
-    SENT_ATTENTION: State;
-    FINAL: State;
-  }
-*/

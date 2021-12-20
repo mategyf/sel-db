@@ -32,23 +32,12 @@ export default class StoredProcedure {
   static getDataType(typeStr, options) {
     // eslint-disable-next-line no-unused-vars
     const [nameStr, optionsStr] = typeStr.replace(')', '').split('(');
-
-    // let length;
-    // if (optionsStr) {
-    //   length = parseInt(optionsStr, 10);
-    //   if (Number.isNaN(length)) length = optionsStr.toLowerCase();
-    // }
-
     const name = dataTypes[nameStr.toLowerCase()];
+    /* https://tediousjs.github.io/tedious/api-datatypes.html */
     if (!name) {
       throw new Error('Invalid data type!');
     }
-    /* https://tediousjs.github.io/tedious/api-datatypes.html */
 
-    // if (length) {
-    //   return { type: name, options: { length } };
-    // }
-    // return { type: name };
     return { type: name, options };
   }
 }
