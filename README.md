@@ -25,6 +25,8 @@ set @outputCount = LEN(@inputVal);
 GO
 ```
 
+(Example from [tedious docs](https://github.com/tediousjs/tedious/blob/master/examples/stored-procedure-with-parameters.js))
+
 A basic implementation would be:
 
 ```javascript
@@ -158,7 +160,7 @@ Returns a string containing the state of the connection. This, AFAIK can be as f
 |SENT_ATTENTION|SentAttention|
 |**FINAL**|Final|
 
-Important ones are bolded. You need to be in the 'connected' state in order to send a request, you cannot do it while in the initialized or connecting state. Sel-db waits till the connection is established, so use [initiateConnection](#initiateConnectionsqlConfig).
+Possibly important ones are bolded. You need to be in the `LoggedIn` state in order to send a request, you cannot do it while in the `Initialized` or `Connecting` state. Sel-db will wait till the connection is established, so use [initiateConnection](#initiateConnectionsqlConfig).
 
 ### Stored procedures
 
@@ -188,6 +190,10 @@ Adds an output parameter, uses the same syntax as above.
 
 ### ECONNRESET, timeout (?) on Azure
 
-After some time, connections to azure databases are broken, they switch to 'Final' state, possibly due to timeout settings. If the actual internet connection is still open, sel-db will close the previous, then create a new connection when a new request is called.
+After some time, connections to azure databases are broken, they switch to 'Final' state, possibly due to timeout settings.
+
+[Error log image](/assets/img/ECONNRESET_log1.jpg)
+
+If a new call is made to the database, sel-db will close the previous connection and create a new one automatically. This ensures that calls are processed in case of this error happening.
 
 The disconnection event still throws an uncaught exception, which clogs the logging and potentially the console/terminal running express.
