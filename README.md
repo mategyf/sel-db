@@ -158,13 +158,31 @@ Returns a string containing the state of the connection. This, AFAIK can be as f
 |SENT_ATTENTION|SentAttention|
 |**FINAL**|Final|
 
-Important ones are bolded. You need to be in the 'connected' state in order to send a request, you cannot do it while in the initialized or connecting state. Sel-db waits till the connection is established, so use [initiateConnection](#-initiateConnection(sqlConfig)).
+Important ones are bolded. You need to be in the 'connected' state in order to send a request, you cannot do it while in the initialized or connecting state. Sel-db waits till the connection is established, so use [initiateConnection](#initiateConnectionsqlConfig).
 
 ### Stored procedures
 
-addParam(name, type, value, options)
-addOutputParam(name, type, value, options)
-Todo.
+#### **const sp = new StoredProcedure(procedureName)**
+
+Creates a new stored procedure with the name `procedureName`, which should be equivalent to the name in your sql server.
+
+#### **addParam(name, type, value, options)**
+
+Adds an input parameter to the procedure, to be called on the instantiated stored procedure object.
+
+- `name`: string, the name of the parameter
+- `type`: string the type of the parameter. It is case-insesitive, will be matched to a [datatype from _tedious_](http://tediousjs.github.io/tedious/api-datatypes.html).
+- `value`: the value the parameter will take. Check the above link to datatypes to know which JavaScript variable type to use. Optional.
+- `options`: an optional object to specify additional type-related options. Basically `length`, `precision` or `scale`. From _tedious_ docs:
+  > `length` for VarChar, NVarChar, VarBinary. Use length as Infinity for VarChar(max), NVarChar(max) and VarBinary(max).
+  >
+  > `precision` for Numeric, Decimal
+  >
+  > `scale` for Numeric, Decimal, Time, DateTime2, DateTimeOffset
+
+#### **addOutputParam(name, type, value, options)**
+
+Adds an output parameter, uses the same syntax as above.
 
 ## Known issues
 
