@@ -192,7 +192,7 @@ Adds an output parameter, uses the same syntax as above.
 
 After some time, connections to azure databases are broken, they switch to 'Final' state, possibly due to timeout settings.
 
-[Error log image](/assets/img/ECONNRESET_log1.jpg)
+![Error log image](/assets/img/ECONNRESET_log1.jpg)
 
 If a new call is made to the database, sel-db will close the previous connection and create a new one automatically. This ensures that calls are processed in case of this error happening.
 
