@@ -122,10 +122,48 @@ Since this returns a promise, use eg. `const a = await countChar('a')` to get th
 
 ### Connection
 
-Todo.
+#### **const db = new DB(logger)**
+
+Creates a new instance of the database connection object. `logger` is an optional parameter, a logger object that has a `logger.info` and a `logger.error` method for logging infos and errors respectively.
+
+#### **initiateConnection(sqlConfig)**
+
+Initiates a connection with the configuration provided in the object `sqlConfig`. This is passed as-is to _tedious_, so check [their docs](http://tediousjs.github.io/tedious/index.html).
+
+#### **callSP(sp)**
+
+Calls a stored procedure. `sp` should be an instance of `StoredProcedure`, see below.
+
+#### **dropConnection()**
+
+Closes the connection and clears the connection object.
+
+#### **getState()**
+
+Returns a string containing the state of the connection. This, AFAIK can be as follows:
+|state|string|
+|---|---|
+|INITIALIZED|Initialized|
+|**CONNECTING**|Connecting|
+|SENT_PRELOGIN|SentPrelogin|
+|REROUTING|ReRouting|
+|TRANSIENT_FAILURE_RETRY|TRANSIENT_FAILURE_RETRY|
+|SENT_TLSSSLNEGOTIATION|SentTLSSSLNegotiation|
+|SENT_LOGIN7_WITH_STANDARD_LOGIN|SentLogin7WithStandardLogin|
+|SENT_LOGIN7_WITH_NTLM|SentLogin7WithNTLMLogin|
+|SENT_LOGIN7_WITH_FEDAUTH|SentLogin7Withfedauth|
+|LOGGED_IN_SENDING_INITIAL_SQL|LoggedInSendingInitialSql|
+|**LOGGED_IN**|LoggedIn|
+|**SENT_CLIENT_REQUEST**|SentClientRequest|
+|SENT_ATTENTION|SentAttention|
+|**FINAL**|Final|
+
+Important ones are bolded. You need to be in the 'connected' state in order to send a request, you cannot do it while in the initialized or connecting state. Sel-db waits till the connection is established, so use [initiateConnection](#-initiateConnection(sqlConfig)).
 
 ### Stored procedures
 
+addParam(name, type, value, options)
+addOutputParam(name, type, value, options)
 Todo.
 
 ## Known issues
