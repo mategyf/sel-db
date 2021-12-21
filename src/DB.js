@@ -5,6 +5,7 @@ export default class DB {
   constructor(logger) {
     this.config = {};
     this.connection = {};
+    this.logger = {};
     if (logger) {
       this.logger.error = (msg) => logger.error(`sel-db: ${msg}`);
       this.logger.info = (msg) => logger.info(`sel-db: ${msg}`);
