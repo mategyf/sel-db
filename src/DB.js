@@ -10,15 +10,18 @@ export default class DB {
       this.logger.error = (msg) => logger.error(`sel-db: ${msg}`);
       this.logger.info = (msg) => logger.info(`sel-db: ${msg}`);
     } else {
-      this.replaceLogger();
+      this.logger = DB.replaceLogger();
     }
   }
 
-  initiateConnection(sqlConfig) {
+  async initiateConnection(sqlConfig) {
     this.config = sqlConfig;
     this.connection = new Connection(this.config);
     this.checkSqlConfig();
-    return this.openConnection();
+    // return this.openConnection();
+    console.log('calling openconnection');
+    const result = await this.openConnection();
+    console.log(`Result: ${result}`);
   }
 
   dropConnection() {
@@ -167,8 +170,8 @@ export default class DB {
       });
   }
 
-  replaceLogger() {
-    this.logger = {
+  static replaceLogger() {
+    return {
       // eslint-disable-next-line no-console
       info: console.log,
       // eslint-disable-next-line no-console
