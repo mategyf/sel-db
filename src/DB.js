@@ -19,9 +19,10 @@ export default class DB {
     this.connection = new Connection(this.config);
     this.checkSqlConfig();
     // return this.openConnection();
-    console.log('calling openconnection');
-    const result = await this.openConnection();
-    console.log(`Result: ${result}`);
+    // console.log('calling openconnection');
+    // const result = await this.openConnection();
+    // console.log(`Result: ${result}`);
+    return this.openConnection();
   }
 
   dropConnection() {
@@ -42,14 +43,16 @@ export default class DB {
       this.connection.connect((err) => {
         if (err) {
           this.logger.error(
-            `resetConnection: Reopen connection failed: ${err}`,
+            // TODO: test this error message
+            `resetConnection: Reopen connection failed: ${err.message}`,
           );
           reject(err);
+        } else {
+          this.logger.info(
+            'resetConnection: Database connection successfully reset.',
+          );
+          resolve(this.getState());
         }
-        this.logger.info(
-          'resetConnection: Database connection successfully reset.',
-        );
-        resolve(this.getState());
       });
     });
   }
@@ -57,48 +60,60 @@ export default class DB {
   openConnection() {
     return new Promise((resolve, reject) => {
       const state = this.getState();
-      if (state === 'LoggedIn') {
-        this.logger.info('openConnection: Already logged in.');
-        resolve(this.getState());
-      }
 
-      if (state === 'Connecting') {
-        this.logger.info(
-          'openConnection: Already connecting, waiting for completion.',
-        );
-        this.connection.on('connect', (err) => {
-          if (err) {
-            this.logger.error(err);
-            reject(err);
-          }
+      switch (state) {
+        case 'LoggedIn':
+          this.logger.info('openConnection: Already logged in.');
           resolve(this.getState());
-        });
-      } else if (state === 'Final') {
-        this.logger.info(
-          'openConnection: State is Final. Resetting connection.',
-        );
-        this.resetConnection()
-          .then(() => {
-            this.logger.info('openConnection: Connection successfully reset.');
-            resolve(this.getState());
-          })
-          .catch((e) => {
-            this.logger.error(e);
-            reject(e);
+          break;
+        case 'Connecting':
+          this.logger.info(
+            'openConnection: Already connecting, waiting for completion.',
+          );
+          this.connection.on('connect', (err) => {
+            if (err) {
+              // TODO: test this case somehow...
+              // this.logger.error(err);
+              reject(err);
+            } else {
+              resolve(this.getState());
+            }
           });
-      } else {
-        this.connection.connect((err) => {
-          if (err) {
-            this.logger.error(err);
-            reject(err);
-          }
-          this.logger.info('openConnection: Database successfully connected.');
-          resolve(this.getState());
-        });
+          break;
+        case 'Final':
+          this.logger.info(
+            'openConnection: State is Final. Resetting connection.',
+          );
+          this.resetConnection()
+            .then(() => {
+              this.logger.info(
+                'openConnection: Connection successfully reset.',
+              );
+              resolve(this.getState());
+            })
+            .catch((e) => {
+              // TODO: test this case
+              // this.logger.error(e);
+              reject(e);
+            });
+          break;
+        default:
+          this.connection.connect((err) => {
+            if (err) {
+              // this.logger.error(err);
+              reject(err);
+            } else {
+              this.logger.info(
+                'openConnection: Database successfully connected.',
+              );
+              resolve(this.getState());
+            }
+          });
       }
     });
   }
 
+  // TODO: fix reject !!!
   retardedCall(sp) {
     return new Promise((resolve, reject) => {
       const output = {};
@@ -146,7 +161,7 @@ export default class DB {
         }));
       });
 
-      // todo: 'columns' name
+      // TODO: 'columns' name
       request.on('row', (xxxcolumns) => {
         const record = {};
 
