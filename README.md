@@ -71,7 +71,7 @@ console.log(result);
 
 ## Real-life implementation
 
-Sel-db can be used with a logger, [@mategyf/express-logger](https://www.npmjs.com/package/@mategyf/express-logger) is tested with it, but anything that has `xxx.info()` and `xxx.error()` methods should work.
+Sel-db can be used with a logger, [@mategyf/express-logger](https://www.npmjs.com/package/@mategyf/express-logger) is tested with it, but anything that has `info()` and `error()` methods should work.
 
 Create a file that exports an instance of the DB class. To keep things organized, it can also contain the config object.
 
@@ -101,10 +101,12 @@ In a place that gets called at init (like `index.js`), initialize the connection
 ```javascript
 import { db, sqlConfig } from './db';
 
+// Make sure this runs before any call to the database is performed
 db.initiateConnection(sqlConfig).catch((e) => {
-  // Do some error handling
+  // Do some error handling, eg.:
   logger.error(e.message);
 });
+
 // ...
 ```
 
@@ -127,7 +129,7 @@ export default async function countChar(str) {
 }
 ```
 
-Since this returns a promise, use eg. `const a = await countChar('a')` to get the result.
+Since this is async, use eg. `const a = await countChar('a')` to get the result.
 
 ## API
 
@@ -152,14 +154,14 @@ Returns an object containing the results of the call. The example stored procedu
 ```js
 { 
   output: {
-    outputCount: 10
+    outputCount: 9
   },
   columns: [],
   recordset: []
 }
 ```
 
-Output variables of the stored procedure will be in the `output: {}` object, their keys will be the value given in the `name` parameter of [`addOutputParam()`](#addOutputParamnametypevalueoptions).
+Output variables of the stored procedure will be in the `output: {}` object, their keys will be the value given in the `name` parameter of [`addOutputParam()`](#addoutputparamname-type-value-options).
 
 #### **dropConnection()**
 
@@ -197,10 +199,10 @@ Creates a new stored procedure with the name `procedureName`, which should be th
 
 Adds an input parameter to the procedure, to be called on the instantiated stored procedure object.
 
-- `name`: string, the name of the parameter
-- `type`: string the type of the parameter. It is case-insesitive, will be matched to a [datatype from _tedious_](http://tediousjs.github.io/tedious/api-datatypes.html).
+- `name`: string, the name of the parameter. Case sensitive.
+- `type`: string, the type of the parameter. It is case-**in**sesitive and will be matched to a [datatype from _tedious_](http://tediousjs.github.io/tedious/api-datatypes.html).
 - `value`: the value the parameter will take. Check the above link to datatypes to know which JavaScript variable type to use. Optional.
-- `options`: an optional object to specify additional type-related options. Basically `length`, `precision` or `scale`. From _tedious_ docs:
+- `options`: an optional object to specify additional type-related options. Basically `length`, `precision` or `scale`. From [_tedious_ docs](http://tediousjs.github.io/tedious/api-request.html#function_addParameter):
   
   > `length` for VarChar, NVarChar, VarBinary. Use length as Infinity for VarChar(max), NVarChar(max) and VarBinary(max).
   >
