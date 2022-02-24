@@ -113,18 +113,22 @@ export default class DB {
     });
   }
 
-  // TODO: fix reject !!!
   retardedCall(sp) {
     return new Promise((resolve, reject) => {
       const output = {};
       let columns = [];
       const recordset = [];
 
+      // TODO: test rejection path
+      let isRejected = false;
       const request = new Request(sp.procName, (err) => {
         if (err) {
           reject(err);
+          isRejected = true;
         }
       });
+
+      if (isRejected) return;
 
       request.setTimeout = sp.timeOut;
 
